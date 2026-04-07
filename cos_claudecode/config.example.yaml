@@ -1,0 +1,22 @@
+# Chief of Staff configuration
+# Copy this file to config.yaml and fill in your details.
+# config.yaml is gitignored so your personal data won't be committed.
+
+# Timezone (IANA format)
+timezone: America/Los_Angeles
+
+# Google Calendars to monitor
+# - id: "primary" for your main calendar
+# - id: "you@example.com" for additional calendars you own or are subscribed to
+# - id: "long_calendar_id@group.calendar.google.com" for shared/group calendars
+#       (find these in Google Calendar settings → Integrate calendar → Calendar ID)
+calendars:
+  - id: primary
+    label: Personal
+  - id: you@yourcompany.com
+    label: Work
+  - id: you@sideproject.com
+    label: Side Project
+  # Add as many as you want
+  # - id: c_xxxxx@group.calendar.google.com
+  #   label: Family

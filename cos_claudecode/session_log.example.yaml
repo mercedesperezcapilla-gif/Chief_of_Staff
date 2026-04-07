@@ -1,0 +1,30 @@
+# Session log — your /cos memory.
+# This file is append-only during a /cos run. The agent reads it first
+# every time it runs to maintain context across sessions.
+#
+# Copy this file to session_log.yaml to start. session_log.yaml is gitignored
+# so your personal context won't be committed.
+#
+# Entry types:
+#   intent     - what you said you'd work on
+#   update     - what you actually completed
+#   observation - things the agent noticed (conflicts, patterns, corrections)
+#   nag        - follow-ups the agent has raised that haven't been addressed
+#
+# Format example:
+
+- ts: "2026-01-15T09:00"
+  type: intent
+  note: "Finishing the Q1 board deck this morning"
+
+- ts: "2026-01-15T11:30"
+  type: update
+  note: "Board deck done. Sending to Pat for review."
+
+- ts: "2026-01-15T11:32"
+  type: observation
+  note: "User has 5 open tasks in 'Marketing' list, oldest is 47 days. Worth a purge."
+
+- ts: "2026-01-15T11:35"
+  type: nag
+  note: "Software vendor renewal — first raised 2026-01-10, still no decision. Day 5."

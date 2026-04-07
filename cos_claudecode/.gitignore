@@ -1,0 +1,18 @@
+# Personal data — never commit
+config.yaml
+session_log.yaml
+oauth_credentials.json
+tasks_token.json
+gcal_token.json
+tasks_snapshot.json
+gcal_snapshot.json
+projects.yaml
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# OS
+.DS_Store
