@@ -2,7 +2,7 @@
 name: cos
 description: Chief of Staff — surfaces what needs attention across all projects, tasks, and calendar
 argument-hint: "[today | week | review | focus | update <note>]"
-allowed-tools: Bash, Read, Write, Glob, Grep, mcp__claude_ai_Google_Calendar__gcal_list_events, mcp__claude_ai_Google_Calendar__gcal_find_my_free_time, mcp__claude_ai_Gmail__gmail_search_messages
+allowed-tools: Bash, Read, Write, Glob, Grep, mcp__claude_ai_Google_Calendar__list_events, mcp__claude_ai_Google_Calendar__create_event, mcp__claude_ai_Google_Calendar__list_calendars, mcp__claude_ai_Google_Calendar__suggest_time, mcp__claude_ai_Gmail__gmail_search_messages, mcp__claude_ai_Gmail__gmail_read_message
 ---
 
 # Chief of Staff
@@ -55,6 +55,25 @@ Monitor these relationships. Flag when any are going silent or need intentional 
 
 ## Data Sources
 
+### Google API Access — MCP vs Local Scripts
+
+This skill can access Google Calendar and Gmail through **two paths**. The Google Calendar and Gmail MCP connectors (claude.ai Settings → Connectors) provide live, direct access. The local sync scripts are a fallback when MCP is not connected.
+
+| Service | MCP Tool (preferred) | Local Fallback |
+|---------|---------------------|----------------|
+| **Calendar — read events** | `mcp__claude_ai_Google_Calendar__list_events` | `python3 {{COS_DIR}}/gcal_sync.py` → read `gcal_snapshot.json` |
+| **Calendar — create events** | `mcp__claude_ai_Google_Calendar__create_event` | Not available locally — tell {{USER_FIRST_NAME}} to create manually |
+| **Calendar — list calendars** | `mcp__claude_ai_Google_Calendar__list_calendars` | Hardcoded calendar IDs below |
+| **Gmail — search inbox** | `mcp__claude_ai_Gmail__gmail_search_messages` | Not available locally |
+| **Gmail — read message** | `mcp__claude_ai_Gmail__gmail_read_message` | Not available locally |
+| **Google Tasks** | *No MCP available* | `python3 {{COS_DIR}}/tasks_sync.py` → read `tasks_snapshot.json` (always) |
+
+**Detection logic:** At the start of every `/cos` run, try to call the MCP tool first (e.g., `mcp__claude_ai_Google_Calendar__list_events`). If it succeeds, use MCP for all calendar operations in that run. If it fails (tool not found, not connected, auth error), fall back to the local sync script and snapshot JSON.
+
+**Do not mix paths in a single run.** If MCP is working, use it for all calendars. If falling back, sync once and read the snapshot for all.
+
+When using MCP tools, you must first load the tool schema via `ToolSearch` with `select:<tool_name>` before calling it — deferred tools fail without schema loading.
+
 ### 1. Session Log (ALWAYS read first)
 Read `{{COS_DIR}}/session_log.yaml` — this is your memory. It contains:
 - **intent**: what {{USER_FIRST_NAME}} said they'd work on
@@ -85,7 +104,7 @@ ls -lt {{PROJECTS_DIR}}/ | head -15
 
 Use file modification times to infer what they've been working on. If they ran `/cos` from a specific project directory, note that as context.
 
-### 3. Google Tasks (via sync script)
+### 3. Google Tasks (always via local sync — no MCP available)
 ```bash
 cd {{COS_DIR}} && python3 tasks_sync.py 2>/dev/null
 ```
@@ -102,7 +121,18 @@ Calendars to check (configured in `config.yaml`):
 - `you@sideproject.com` — Side project
 -->
 
-Use `gcal_list_events` (via the Google Calendar MCP connector) for each calendar. Always use `{{TIMEZONE}}`. Pull all calendars in parallel when possible.
+**When using MCP** (`mcp__claude_ai_Google_Calendar__list_events`):
+- Call with `calendarId`, `startTime`, `endTime`, `timeZone: "{{TIMEZONE}}"`, `orderBy: "startTime"`
+- Pull all calendars in parallel when possible
+- Events come back live — no stale snapshot concern
+
+**When using local fallback:**
+```bash
+cd {{COS_DIR}} && python3 gcal_sync.py --days 7 2>/dev/null
+```
+Then read `{{COS_DIR}}/gcal_snapshot.json`
+
+Always use `{{TIMEZONE}}`.
 
 **Distinguishing real meetings from work blocks:**
 - Self-created event + 1 attendee + no Zoom/Meet link = **work block placeholder** (protected work time, not a commitment)

@@ -154,15 +154,25 @@ mkdir -p ~/.claude/skills/cos
 cp skill.md ~/.claude/skills/cos/skill.md
 ```
 
-## Step 10: (Optional but recommended) Connect Google Calendar MCP
+## Step 10: (Optional but recommended) Connect Google MCPs
 
-The skill works two ways for calendar data:
-1. **Local sync** (`gcal_sync.py`) — pulls into a local JSON snapshot
-2. **Google Calendar MCP** — Claude.ai's Google Calendar connector lets the agent query calendar data live
+The skill works two ways for Google data — **MCP connectors** (live, preferred) or **local sync scripts** (fallback). You can use either or both.
 
-For best results, enable the **Google Calendar MCP connector** in your Claude account so the agent can query your calendar directly during a `/cos` run instead of relying only on the snapshot. Settings → Connectors → Google Calendar.
+### Google Calendar MCP
+Enable at: **Settings → Connectors → Google Calendar** in your Claude account.
 
-Both work — MCP is faster and live, the local script is a fallback if you don't want to grant Claude.ai connector access.
+When connected, the agent calls `mcp__claude_ai_Google_Calendar__list_events` directly — live data, no snapshot staleness, and can also create events. When not connected, it falls back to `gcal_sync.py` + `gcal_snapshot.json`.
+
+### Gmail MCP
+Enable at: **Settings → Connectors → Gmail** in your Claude account.
+
+When connected, the agent can search your inbox for event invites, action items, and context. This powers the Events Aggregation feature (scanning for Luma, Eventbrite, Partiful invites). When not connected, inbox scanning is skipped gracefully.
+
+### Google Tasks
+No MCP connector exists for Google Tasks. The skill always uses the local `tasks_sync.py` script. This is why Steps 3-5 (OAuth setup) are required even if you connect both MCPs above.
+
+### How it works at runtime
+The skill tries MCP first. If it gets a tool-not-found or auth error, it falls back to the local script for that service. It won't mix paths within a single `/cos` run — if MCP works for calendar, it uses MCP for all 6 calendars.
 
 ## Step 11: Run it
 
