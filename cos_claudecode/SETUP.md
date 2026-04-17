@@ -1,132 +1,41 @@
 # Setup Guide
 
-Getting `/cos` running on your machine in about 30 minutes.
+Getting `/cos` running on your machine in about 15 minutes (MCP path) or 30 minutes (with OAuth fallback).
 
 ## Prerequisites
 
 - **Claude Code** installed and working — https://claude.com/claude-code
-- **Python 3.10+** installed
 - **A Google account** with Tasks and Calendar you want to sync
-- **Basic terminal comfort** — you'll be running a few `python` commands
+
+For the OAuth fallback path (optional), you'll also need:
+- **Python 3.10+** installed
+- **Basic terminal comfort** — a few `python` commands
 
 ## Step 1: Pick your `cos` directory
 
-Choose a directory where the sync scripts and snapshots will live. Annie uses `~/Desktop/python/cos/` but you can put it anywhere stable. We'll call this `<COS_DIR>` for the rest of the guide.
+Choose a directory where session logs and (optionally) sync scripts will live. We'll call this `<COS_DIR>` for the rest of the guide.
 
 ```bash
 mkdir -p ~/cos
 cd ~/cos
 ```
 
-Copy the contents of this repo's `scripts/` directory into `<COS_DIR>`:
+Copy the base files:
 
 ```bash
-cp /path/to/cos_claudecode/scripts/tasks_sync.py ~/cos/
-cp /path/to/cos_claudecode/scripts/gcal_sync.py ~/cos/
-cp /path/to/cos_claudecode/config.example.yaml ~/cos/
 cp /path/to/cos_claudecode/session_log.example.yaml ~/cos/
-cp /path/to/cos_claudecode/requirements.txt ~/cos/
+cp /path/to/cos_claudecode/config.example.yaml ~/cos/
 ```
 
-## Step 2: Install Python dependencies
-
-From `<COS_DIR>`:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-## Step 3: Set up Google Cloud OAuth
-
-You need an OAuth client to read your Google Tasks and Calendar.
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project (or use an existing one) — call it something like "cos-personal"
-3. Go to **APIs & Services → Library** and enable:
-   - **Google Tasks API**
-   - **Google Calendar API**
-4. Go to **APIs & Services → Credentials** and click **Create Credentials → OAuth client ID**
-5. If prompted to set up OAuth consent screen first:
-   - User type: **External** (unless you have a Google Workspace, then Internal)
-   - App name: "cos personal" (or whatever)
-   - User support email: your email
-   - Developer contact: your email
-   - Scopes: skip (the script declares them)
-   - Test users: **add your own Google email** (this is required for External + unverified apps)
-6. Application type: **Desktop app**
-7. Name: "cos local"
-8. Click **Create**, then **Download JSON**
-9. Save the downloaded file as `oauth_credentials.json` in `<COS_DIR>`
-
-## Step 4: Configure your calendars
-
-Copy the example config to a real one and edit it:
-
-```bash
-cp config.example.yaml config.yaml
-```
-
-Open `config.yaml` and:
-- Set your `timezone` (IANA format like `America/New_York`, `Europe/London`, etc.)
-- Add each calendar you want monitored under `calendars:`
-
-To find a calendar's ID:
-- **Your primary calendar:** use `primary` as the ID
-- **Other calendars you own:** use the email address (`you@yourcompany.com`)
-- **Shared/group calendars:** Open Google Calendar in browser → click the 3 dots next to the calendar name → **Settings and sharing** → scroll to **Integrate calendar** → copy **Calendar ID** (looks like `c_xxxxxxxx@group.calendar.google.com`)
-
-Example:
-
-```yaml
-timezone: America/Los_Angeles
-
-calendars:
-  - id: primary
-    label: Personal
-  - id: jane@acmecorp.com
-    label: Work
-  - id: c_abc123xyz@group.calendar.google.com
-    label: Family
-```
-
-## Step 5: First-run authentication
-
-This opens a browser window where you'll grant access to your Google account. You only do this once per script.
-
-```bash
-python3 tasks_sync.py --auth
-```
-
-A browser tab opens. Sign in with the Google account that owns the calendars/tasks you configured. You'll see a "Google hasn't verified this app" warning — click **Advanced → Go to (your project name)** to proceed (this is expected for personal-use OAuth clients).
-
-Then:
-
-```bash
-python3 gcal_sync.py --auth
-```
-
-Same flow. After both succeed, you'll have `tasks_token.json` and `gcal_token.json` in `<COS_DIR>`. **These are gitignored** — don't commit them.
-
-## Step 6: Test the sync scripts
-
-```bash
-python3 tasks_sync.py --list
-python3 gcal_sync.py --list
-```
-
-You should see your task lists and today's calendar events printed. If yes, the data layer works.
-
-## Step 7: Initialize the session log
+## Step 2: Initialize the session log
 
 ```bash
 cp session_log.example.yaml session_log.yaml
 ```
 
-Open `session_log.yaml` and delete the example entries. Leave the file empty (just the comments at the top). The agent will start writing to it on the first `/cos` run.
+Delete the example entries. Leave the file empty (just the comments at the top). The agent will start writing to it on the first `/cos` run.
 
-## Step 8: Customize `skill.md.template` for you
+## Step 3: Customize `skill.md.template` for you
 
 This is the most important step. Open `skill.md.template` and find every `{{PLACEHOLDER}}` token.
 
@@ -137,7 +46,7 @@ The bare minimum to fill in:
 - `{{PROJECTS_DIR}}` — where your code/work projects live
 - `{{PEAK_HOURS}}`, `{{VALLEY_HOURS}}`, `{{FAMILY_HOURS}}`, `{{EVENING_HOURS}}` — your energy curve
 - `{{TIMEZONE}}` — same as in config.yaml
-- `{{CALENDAR_LIST}}` — bulleted list of your calendars
+- `{{CALENDAR_LIST}}` — bulleted list of your calendars (see Step 4 for finding calendar IDs)
 - At least 3 entries under "Strategic Priorities"
 - At least 2 entries under "Relationship Tracking"
 
@@ -145,36 +54,36 @@ The richer you make this, the better `/cos` performs. See [CUSTOMIZING.md](CUSTO
 
 Save the customized version as `skill.md` (drop the `.template`).
 
-## Step 9: Install the skill in Claude Code
+## Step 4: Connect Google MCPs (recommended)
 
-Claude Code reads skills from `~/.claude/skills/`. Create the cos skill directory:
+The fastest way to give `/cos` access to your Google data. Enable these connectors in your Claude account:
+
+### Google Calendar
+**Settings → Connectors → Google Calendar**
+
+When connected, the agent calls `mcp__claude_ai_Google_Calendar__list_events` directly — live data, no snapshot staleness, and can create events, check availability, etc.
+
+To find calendar IDs for your `skill.md`:
+- **Your primary calendar:** use `primary`
+- **Other calendars you own:** use the email address (`you@yourcompany.com`)
+- **Shared/group calendars:** Google Calendar in browser → 3 dots next to calendar name → **Settings and sharing** → **Integrate calendar** → copy **Calendar ID** (looks like `c_xxxxxxxx@group.calendar.google.com`)
+
+### Gmail
+**Settings → Connectors → Gmail**
+
+When connected, the agent can search your inbox for event invites (Luma, Eventbrite, Partiful), action items, and context. When not connected, inbox scanning is skipped gracefully.
+
+### Google Tasks
+**No MCP connector exists for Google Tasks yet.** If you use Google Tasks and want `/cos` to read them, you'll need the OAuth fallback (Step 7). If you don't use Google Tasks, skip it — `/cos` works fine without it.
+
+## Step 5: Install the skill in Claude Code
 
 ```bash
 mkdir -p ~/.claude/skills/cos
 cp skill.md ~/.claude/skills/cos/skill.md
 ```
 
-## Step 10: (Optional but recommended) Connect Google MCPs
-
-The skill works two ways for Google data — **MCP connectors** (live, preferred) or **local sync scripts** (fallback). You can use either or both.
-
-### Google Calendar MCP
-Enable at: **Settings → Connectors → Google Calendar** in your Claude account.
-
-When connected, the agent calls `mcp__claude_ai_Google_Calendar__list_events` directly — live data, no snapshot staleness, and can also create events. When not connected, it falls back to `gcal_sync.py` + `gcal_snapshot.json`.
-
-### Gmail MCP
-Enable at: **Settings → Connectors → Gmail** in your Claude account.
-
-When connected, the agent can search your inbox for event invites, action items, and context. This powers the Events Aggregation feature (scanning for Luma, Eventbrite, Partiful invites). When not connected, inbox scanning is skipped gracefully.
-
-### Google Tasks
-No MCP connector exists for Google Tasks. The skill always uses the local `tasks_sync.py` script. This is why Steps 3-5 (OAuth setup) are required even if you connect both MCPs above.
-
-### How it works at runtime
-The skill tries MCP first. If it gets a tool-not-found or auth error, it falls back to the local script for that service. It won't mix paths within a single `/cos` run — if MCP works for calendar, it uses MCP for all 6 calendars.
-
-## Step 11: Run it
+## Step 6: Run it
 
 Open Claude Code and type:
 
@@ -182,16 +91,92 @@ Open Claude Code and type:
 /cos today
 ```
 
-You should get a briefing. If it's empty or wrong, check:
-- Did `python3 tasks_sync.py` and `python3 gcal_sync.py` run successfully?
-- Are the JSON snapshot files in `<COS_DIR>` populated?
-- Did you fill in `{{COS_DIR}}` correctly in `skill.md`?
+You should get a briefing. If calendar data is missing, check that the Google Calendar MCP connector is enabled and authorized (Step 4).
 
-## Step 12: (Optional) Schedule the sync scripts
+**If this works, you're done.** Steps 7+ are only needed if you want Google Tasks integration or an offline fallback for calendar data.
+
+---
+
+## Step 7: (Optional) OAuth fallback for Google Tasks and offline calendar
+
+The local sync scripts give you two things the MCPs can't:
+1. **Google Tasks** — read/write task lists (no MCP exists)
+2. **Offline calendar snapshots** — if you prefer not to grant MCP connector access, or want a local backup
+
+### 7a: Copy sync scripts and install dependencies
+
+```bash
+cp /path/to/cos_claudecode/scripts/tasks_sync.py ~/cos/
+cp /path/to/cos_claudecode/scripts/gcal_sync.py ~/cos/
+cp /path/to/cos_claudecode/requirements.txt ~/cos/
+
+cd ~/cos
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 7b: Set up Google Cloud OAuth
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or use an existing one) — call it something like "cos-personal"
+3. Go to **APIs & Services → Library** and enable:
+   - **Google Tasks API**
+   - **Google Calendar API** (only needed if you're NOT using the Calendar MCP)
+4. Go to **APIs & Services → Credentials** and click **Create Credentials → OAuth client ID**
+5. If prompted to set up OAuth consent screen first:
+   - User type: **External** (unless you have a Google Workspace, then Internal)
+   - App name: "cos personal" (or whatever)
+   - User support email: your email
+   - Developer contact: your email
+   - Scopes: skip (the script declares them)
+   - Test users: **add your own Google email** (required for External + unverified apps)
+6. Application type: **Desktop app**
+7. Name: "cos local"
+8. Click **Create**, then **Download JSON**
+9. Save the downloaded file as `oauth_credentials.json` in `<COS_DIR>`
+
+### 7c: Configure calendars (only if NOT using Calendar MCP)
+
+If you're using the Calendar MCP for live data, skip this — it's only for the local `gcal_sync.py` fallback.
+
+```bash
+cp config.example.yaml config.yaml
+```
+
+Open `config.yaml` and set your `timezone` and `calendars:` list.
+
+### 7d: Authenticate
+
+```bash
+python3 tasks_sync.py --auth
+```
+
+A browser tab opens. Sign in with the Google account that owns the calendars/tasks. You'll see a "Google hasn't verified this app" warning — click **Advanced → Go to (your project name)** to proceed (expected for personal-use OAuth clients).
+
+If you're also using the calendar fallback:
+
+```bash
+python3 gcal_sync.py --auth
+```
+
+After both succeed, you'll have `tasks_token.json` and `gcal_token.json` in `<COS_DIR>`. **These are gitignored** — don't commit them.
+
+### 7e: Test
+
+```bash
+python3 tasks_sync.py --list
+```
+
+You should see your task lists printed. If using the calendar fallback too:
+
+```bash
+python3 gcal_sync.py --list
+```
+
+## Step 8: (Optional) Schedule local sync scripts
 
 The skill instructs Claude to run `tasks_sync.py` itself before reading the snapshot, so this is technically optional. But if you want fresh data without waiting:
-
-Add to your crontab (`crontab -e`):
 
 ```cron
 # Refresh cos snapshots every 30 minutes during work hours
@@ -199,7 +184,19 @@ Add to your crontab (`crontab -e`):
 */30 8-22 * * * cd ~/cos && /usr/bin/python3 gcal_sync.py --days 7 >/dev/null 2>&1
 ```
 
+## How MCP + OAuth coexist at runtime
+
+The skill tries MCP first for each service. If MCP is connected, it uses live data. If not, it falls back to the local sync script and snapshot JSON. It won't mix paths within a single `/cos` run.
+
+| Service | MCP connected | MCP not connected |
+|---------|--------------|-------------------|
+| Calendar | Live via MCP | `gcal_sync.py` → `gcal_snapshot.json` |
+| Gmail | Live via MCP | Inbox scanning skipped |
+| Tasks | *No MCP exists* | `tasks_sync.py` → `tasks_snapshot.json` |
+
 ## Troubleshooting
+
+**Calendar MCP shows no events** — Make sure you authorized the correct Google account in Settings → Connectors → Google Calendar. Also verify the calendar IDs in your `skill.md` are correct.
 
 **"OAuth credentials not found"** — You forgot to save `oauth_credentials.json` in `<COS_DIR>`. Re-download from Google Cloud Console.
 
@@ -209,7 +206,7 @@ Add to your crontab (`crontab -e`):
 
 **Calendar sync returns 0 events but you have events** — Check the calendar ID in `config.yaml`. The shared calendar IDs are long strings with `@group.calendar.google.com`, not the friendly name.
 
-**`/cos` runs but says "no session log found"** — You need to create `session_log.yaml` (Step 7). Empty is fine.
+**`/cos` runs but says "no session log found"** — You need to create `session_log.yaml` (Step 2). Empty is fine.
 
 ## What's next
 
