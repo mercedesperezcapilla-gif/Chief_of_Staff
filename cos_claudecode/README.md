@@ -59,16 +59,35 @@ See [SETUP.md](SETUP.md) for the full walkthrough. The short version:
 
 ## Files in this repo
 
+### Core (read these first)
+
 | File | What it is |
 |------|-----------|
 | [`skill.md.template`](skill.md.template) | The Claude Code skill, with `{{PLACEHOLDERS}}` for your personal context |
-| [`scripts/tasks_sync.py`](scripts/tasks_sync.py) | Google Tasks → local JSON snapshot |
-| [`scripts/gcal_sync.py`](scripts/gcal_sync.py) | Google Calendar → local JSON snapshot |
+| [`SETUP.md`](SETUP.md) | Step-by-step setup walkthrough (start here) |
+| [`CUSTOMIZING.md`](CUSTOMIZING.md) | How to make `/cos` actually feel like *your* chief of staff |
+| [`ADVANCED.md`](ADVANCED.md) | Multi-skill chains: triggering other Claude Code skills from /cos automatically |
+| [`MOBILE.md`](MOBILE.md) | Run /cos directly from your phone via a GitHub-synced sync repo (full skill, same session log) |
+| [`SLACK.md`](SLACK.md) | Optional: run /cos from Slack on your phone (Socket Mode bot — chat interface alternative) |
+
+### Scripts
+
+| File | What it does |
+|------|-----------|
+| [`scripts/gcal_sync.py`](scripts/gcal_sync.py) | Google Calendar → local JSON snapshot (read) |
+| [`scripts/tasks_sync.py`](scripts/tasks_sync.py) | Google Tasks → local JSON snapshot (read) |
+| [`scripts/tasks_add.py`](scripts/tasks_add.py) | Write tasks back to Google Tasks (separate write-scope OAuth token) |
+| [`scripts/sync_session_log.py`](scripts/sync_session_log.py) | Sync session_log.yaml between local /cos and a private GitHub repo (mobile + multi-device continuity) |
+| [`scripts/gmail_helper.py`](scripts/gmail_helper.py) | Optional: Gmail OAuth helper for inbox scanning/sending when MCP isn't available |
+| [`scripts/cos_slack_bot.py`](scripts/cos_slack_bot.py) | Optional: /cos as a Slack bot for mobile access (see SLACK.md) |
+
+### Config + setup
+
+| File | What it is |
+|------|-----------|
 | [`config.example.yaml`](config.example.yaml) | Calendar list + timezone config template |
 | [`session_log.example.yaml`](session_log.example.yaml) | Empty session log starter with format examples |
 | [`requirements.txt`](requirements.txt) | Python dependencies |
-| [`SETUP.md`](SETUP.md) | Step-by-step setup walkthrough |
-| [`CUSTOMIZING.md`](CUSTOMIZING.md) | How to make `/cos` actually feel like *your* chief of staff |
 
 ## What it costs
 
@@ -86,6 +105,12 @@ See [CUSTOMIZING.md](CUSTOMIZING.md) for examples of how to extend it for things
 - Recurring writing or content cadences (newsletter, column, podcast)
 - Industry-specific recurring obligations
 - Family logistics integration
+
+See [ADVANCED.md](ADVANCED.md) for the multi-skill chain pattern — having `/cos` trigger your other Claude Code skills automatically (e.g., auto-run a weekly metrics pull on Monday mornings, surface 1:1 prep when a 1:1 is on tomorrow's calendar, auto-archive a published doc when you log it).
+
+See [MOBILE.md](MOBILE.md) for direct mobile access — full /cos on your phone via a private GitHub-synced sync repo. Updates from your phone show up on your laptop and vice versa; both devices read the same session log and snapshots.
+
+See [SLACK.md](SLACK.md) for the optional Slack bot — same /cos, reachable from your phone via Slack DM if you prefer a chat-style interface.
 
 The goal is for the agent to know enough about your life that its recommendations actually fit your reality — not generic productivity advice.
 

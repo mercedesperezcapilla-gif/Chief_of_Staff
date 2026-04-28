@@ -2,6 +2,18 @@
 
 Getting `/cos` running on your machine in about 15 minutes (MCP path) or 30 minutes (with OAuth fallback).
 
+> ## ⚠️ Make your fork private BEFORE adding any personal context
+>
+> If you forked this repo to set up your own /cos, the fork is **public by default**. As soon as you customize `skill.md.template` with your strategic priorities, relationships, calendar IDs, recurring obligations, or session log entries, that information becomes public if the fork visibility is still public.
+>
+> **Make your fork private right now, before doing any of the steps below:**
+>
+> 1. Go to your forked repo on GitHub
+> 2. Settings → scroll to bottom → **Danger Zone**
+> 3. **Change repository visibility** → **Make private** → confirm
+>
+> This is the most common foot-gun on this repo. Do it before Step 1.
+
 ## Prerequisites
 
 - **Claude Code** installed and working — https://claude.com/claude-code
