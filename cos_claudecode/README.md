@@ -78,6 +78,7 @@ See [SETUP.md](SETUP.md) for the full walkthrough. The short version:
 | [`scripts/tasks_sync.py`](scripts/tasks_sync.py) | Google Tasks → local JSON snapshot (read) |
 | [`scripts/tasks_add.py`](scripts/tasks_add.py) | Write tasks back to Google Tasks (separate write-scope OAuth token) |
 | [`scripts/sync_session_log.py`](scripts/sync_session_log.py) | Sync session_log.yaml between local /cos and a private GitHub repo (mobile + multi-device continuity) |
+| [`scripts/gdocs_push.py`](scripts/gdocs_push.py) | Markdown → Google Doc push (create new or update existing). Lets /cos write structured artifacts to Drive (drafts, briefs, prep docs) |
 | [`scripts/gmail_helper.py`](scripts/gmail_helper.py) | Optional: Gmail OAuth helper for inbox scanning/sending when MCP isn't available |
 | [`scripts/cos_slack_bot.py`](scripts/cos_slack_bot.py) | Optional: /cos as a Slack bot for mobile access (see SLACK.md) |
 
